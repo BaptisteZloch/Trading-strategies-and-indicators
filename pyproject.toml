@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "trading-strategies"
+version = "0.1.0"
+description = ""
+authors = ["BaptisteZloch <bzloch@hotmail.fr>"]
+readme = "README.md"
+packages = [{include = "src"}]
+
+[tool.poetry.dependencies]
+python = ">=3.9,<3.11"
+numpy = "^1.24.2"
+scipy = "1.8.0"
+statsmodels = "^0.13.5"
+kucoin-python = "^1.0.11"
+pandas = "^1.5.3"
+
+[tool.poetry.group.dev.dependencies]
+ipykernel = "^6.21.2"
+black = "^23.1.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
