@@ -3,6 +3,9 @@ from typing import Callable
 import pandas as pd
 import numpy as np
 
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+
 
 def long_only_backtester(
     df: pd.DataFrame,
@@ -13,18 +16,20 @@ def long_only_backtester(
     initial_equity: int = 1000,
     maker_fees: float = 0.001,
     taker_fees: float = 0.001,
+    get_trade_df: bool = False,
 ) -> None | float | pd.DataFrame:
-    """_summary_
+    """Run a backtest with long only position.
 
     Args:
         df (pd.DataFrame): _description_
         long_entry_function (Callable[[pd.Series, pd.Series], bool]): The long entry function, it should take 2 arguments, the current row and the previous row and return True or False depending on your strategy.
-        long_exit_function (Callable[[pd.Series, pd.Series, int], bool]): The long exit function, it should take 2 arguments, the current row and the previous row and return True or False depending on your strategy.
+        long_exit_function (Callable[[pd.Series, pd.Series, int], bool]):  The long exit function, it should take 2 arguments, the current row and the previous row and return True or False depending on your strategy.
         take_profit (float, optional): _description_. Defaults to np.inf.
         stop_loss (float, optional): _description_. Defaults to np.inf.
         initial_equity (int, optional): _description_. Defaults to 1000.
         maker_fees (float, optional): _description_. Defaults to 0.001.
         taker_fees (float, optional): _description_. Defaults to 0.001.
+        get_trade_df (bool, optional): _description_. Defaults to False.
 
     Returns:
         None | float | pd.DataFrame: _description_
@@ -75,49 +80,57 @@ def long_only_backtester(
             current_trade["fees"] = abs(net_equity * -2 * taker_fees)
             current_trade["net_equity"] = net_equity * (1 + ret) - current_trade["fees"]
 
-            trades_df = pd.concat([trades_df, pd.DataFrame([current_trade])])
+            trades_df = pd.concat(
+                [trades_df, pd.DataFrame([current_trade])], ignore_index=True
+            )
             trading_days = 0
             equity = current_trade["equity"]
             net_equity = current_trade["net_equity"]
             current_trade = {}
-        # elif position_opened is True and buy_price * (1 + take_profit) <= row.High:
-        #     position_opened = False
-        #     current_trade["sell_date"] = index
-        #     current_trade["sell_price"] = buy_price * (1 + take_profit)
-        #     current_trade["sell_reason"] = "Take profit triggered"
+        elif (
+            position_opened is True
+            and current_trade["buy_price"] * (1 + take_profit) <= row.High
+        ):
+            position_opened = False
+            current_trade["sell_date"] = pd.Timestamp(index)
+            current_trade["sell_price"] = buy_price * (1 + take_profit)
+            current_trade["sell_reason"] = "Take profit triggered"
 
-        #     ret = (current_trade["sell_price"] / current_trade["buy_price"]) - 1
-        #     current_trade["return"] = ret
-        #     current_trade["equity"] = equity * (1 + ret)
-        #     current_trade["fees"] = abs(net_equity * -2 * taker_fees)
-        #     current_trade["net_equity"] = (
-        #         current_trade["equity"] - current_trade["fees"]
-        #     )
+            ret = (current_trade["sell_price"] / current_trade["buy_price"]) - 1
+            current_trade["return"] = ret
+            current_trade["equity"] = equity * (1 + ret)
+            current_trade["fees"] = abs(net_equity * -2 * taker_fees)
+            current_trade["net_equity"] = net_equity * (1 + ret) - current_trade["fees"]
 
-        #     trades_df = pd.concat([trades_df, pd.DataFrame([current_trade])])
-        #     trading_days = 0
-        #     equity = current_trade["equity"]
-        #     net_equity = current_trade["net_equity"]
-        #     current_trade = {}
-        # elif position_opened is True and buy_price * (1 - stop_loss) >= row.Low:
-        #     position_opened = False
-        #     current_trade["sell_date"] = index
-        #     current_trade["sell_price"] = buy_price * (1 - stop_loss)
-        #     current_trade["sell_reason"] = "Stop loss triggered"
+            trades_df = pd.concat(
+                [trades_df, pd.DataFrame([current_trade])], ignore_index=True
+            )
+            trading_days = 0
+            equity = current_trade["equity"]
+            net_equity = current_trade["net_equity"]
+            current_trade = {}
+        elif (
+            position_opened is True
+            and current_trade["buy_price"] * (1 - stop_loss) >= row.Low
+        ):
+            position_opened = False
+            current_trade["sell_date"] = pd.Timestamp(index)
+            current_trade["sell_price"] = buy_price * (1 - stop_loss)
+            current_trade["sell_reason"] = "Stop loss triggered"
 
-        #     ret = (current_trade["sell_price"] / current_trade["buy_price"]) - 1
-        #     current_trade["return"] = ret
-        #     current_trade["equity"] = equity * (1 + ret)
-        #     current_trade["fees"] = abs(net_equity * -2 * taker_fees)
-        #     current_trade["net_equity"] = (
-        #         current_trade["equity"] - current_trade["fees"]
-        #     )
+            ret = (current_trade["sell_price"] / current_trade["buy_price"]) - 1
+            current_trade["return"] = ret
+            current_trade["equity"] = equity * (1 + ret)
+            current_trade["fees"] = abs(net_equity * -2 * taker_fees)
+            current_trade["net_equity"] = net_equity * (1 + ret) - current_trade["fees"]
 
-        #     trades_df = pd.concat([trades_df, pd.DataFrame([current_trade])])
-        #     trading_days = 0
-        #     equity = current_trade["equity"]
-        #     net_equity = current_trade["net_equity"]
-        #     current_trade = {}
+            trades_df = pd.concat(
+                [trades_df, pd.DataFrame([current_trade])], ignore_index=True
+            )
+            trading_days = 0
+            equity = current_trade["equity"]
+            net_equity = current_trade["net_equity"]
+            current_trade = {}
         else:
             trading_days += 1
 
@@ -143,29 +156,87 @@ def long_only_backtester(
 
     print(f"\n{'  Strategy performance  ':-^50}")
     print(f"Final balance: {trades_df['equity'].iloc[-1]:.2f} $")
-    print(f"Strategy return: {strategy_final_return:.2f} %")
-    print(f"Strategy fees: {trades_df['fees'].sum():.2f} $")
     print(f"Final net balance: {trades_df['net_equity'].iloc[-1]:.2f} $")
+    # print(f"Strategy return: {strategy_final_return:.2f} %")
     print(f"Strategy net return: {strategy_final_return_net:.2f} %")
     print(f"Buy and Hold return: {buy_and_hold_return:.2f} %")
     print(f"Strategy winrate: {winrate:.2f} %")
+    print(f"Strategy fees: {trades_df['fees'].sum():.2f} $")
+    print(f"Strategy volatility: {trades_df['return'].std():.2f} %")
+
     print(f"\n{'  Trades informations  ':-^50}")
     print(
         f"Mean trade duration: {str((trades_df['trade_duration']).mean()).split('.')[0]}"
     )
     print(f"Total trades: {total_trades}")
-    print(f"Total bad trades: {len(bad_trades)}")
+
     print(f"Total good trades: {len(good_trades)}")
     print(f"Mean good trades return: {100*good_trades['return'].mean():.2f} %")
-    print(f"Mean bad trades return: {100*bad_trades['return'].mean():.2f} %")
     print(f"Median good trades return: {100*good_trades['return'].median():.2f} %")
-    print(f"Median bad trades return: {100*bad_trades['return'].median():.2f} %")
+    print(
+        f"Best trades return: {100*trades_df['return'].max():.2f} % | Date: {trades_df.iloc[trades_df['return'].idxmax()]['sell_date']} | Duration: {trades_df.iloc[trades_df['return'].idxmax()]['trade_duration']}"
+    )
     print(
         f"Mean good trade duration: {str((good_trades['trade_duration']).mean()).split('.')[0]}"
     )
+    print(f"\nTotal bad trades: {len(bad_trades)}")
+    print(f"Mean bad trades return: {100*bad_trades['return'].mean():.2f} %")
+    print(f"Median bad trades return: {100*bad_trades['return'].median():.2f} %")
     print(
-        f"Mean good trade duration: {str((bad_trades['trade_duration']).mean()).split('.')[0]}"
+        f"Worst trades return: {100*trades_df['return'].min():.2f} % | Date: {trades_df.iloc[trades_df['return'].idxmin()]['sell_date']} | Duration: {trades_df.iloc[trades_df['return'].idxmin()]['trade_duration']}"
     )
-    print(f"Exit reasons repartition: {trades_df.reasons.value_counts()}")
+    print(
+        f"Mean bad trade duration: {str((bad_trades['trade_duration']).mean()).split('.')[0]}"
+    )
 
-    return trades_df
+    print(f"Exit reasons repartition: ")
+    for reason, val in zip(
+        trades_df.sell_reason.value_counts().index, trades_df.sell_reason.value_counts()
+    ):
+        print(f"- {reason}: {val}")
+
+    plot_from_trade_df(trades_df, ohlcv_df)
+    if get_trade_df:
+        return trades_df
+
+
+def plot_from_trade_df(trade_df: pd.DataFrame, price_df: pd.DataFrame) -> None:
+    fig = make_subplots(
+        rows=2,
+        cols=1,
+        subplot_titles=("Historical price", "Equity progression"),
+        shared_xaxes=True,
+    )
+
+    fig.add_trace(
+        go.Candlestick(
+            name="Historical price",
+            x=price_df.index,
+            open=price_df["Open"],
+            high=price_df["High"],
+            low=price_df["Low"],
+            close=price_df["Close"],
+        ),
+        row=1,
+        col=1,
+    )
+    trades = trade_df.copy()
+    trades["date"] = trades["sell_date"]
+    trades = trades.set_index("date")
+
+    fig.add_trace(
+        go.Scatter(
+            name="Equity progression",
+            x=trades.index,
+            y=trades["net_equity"],
+            line={"shape": "hv"},
+        ),
+        row=2,
+        col=1,
+    )
+    fig.update_layout(
+        xaxis_rangeslider_visible=False,
+        showlegend=True,
+        title_text="Historical price vs equity strategy",
+    )
+    fig.show()

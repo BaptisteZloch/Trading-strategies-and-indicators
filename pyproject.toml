@@ -14,6 +14,9 @@ statsmodels = "^0.13.5"
 kucoin-python = "^1.0.11"
 pandas = "^1.5.3"
 ta = "^0.10.2"
+plotly = "^5.13.1"
+nbformat = "^5.7.3"
+matplotlib = "^3.7.1"
 
 [tool.poetry.group.dev.dependencies]
 ipykernel = "^6.21.2"
