@@ -77,8 +77,12 @@ def long_only_backtester(
             ret = (current_trade["sell_price"] / current_trade["buy_price"]) - 1
             current_trade["return"] = ret
             current_trade["equity"] = equity * (1 + ret)
-            current_trade["fees"] = abs(net_equity * -2 * taker_fees)
-            current_trade["net_equity"] = net_equity * (1 + ret) - current_trade["fees"]
+            current_trade["net_equity"] = net_equity * (1 + ret - 2 * taker_fees)
+            current_trade["fees"] = (
+                current_trade["equity"] - current_trade["net_equity"]
+            )
+            # current_trade["fees"] = abs(net_equity * -2 * taker_fees)
+            # current_trade["net_equity"] = net_equity * (1 + ret) - current_trade["fees"]
 
             trades_df = pd.concat(
                 [trades_df, pd.DataFrame([current_trade])], ignore_index=True
@@ -99,8 +103,12 @@ def long_only_backtester(
             ret = (current_trade["sell_price"] / current_trade["buy_price"]) - 1
             current_trade["return"] = ret
             current_trade["equity"] = equity * (1 + ret)
-            current_trade["fees"] = abs(net_equity * -2 * taker_fees)
-            current_trade["net_equity"] = net_equity * (1 + ret) - current_trade["fees"]
+            current_trade["net_equity"] = net_equity * (1 + ret - 2 * taker_fees)
+            current_trade["fees"] = (
+                current_trade["equity"] - current_trade["net_equity"]
+            )
+            # current_trade["fees"] = abs(net_equity * -2 * taker_fees)
+            # current_trade["net_equity"] = net_equity * (1 + ret) - current_trade["fees"]
 
             trades_df = pd.concat(
                 [trades_df, pd.DataFrame([current_trade])], ignore_index=True
@@ -121,8 +129,12 @@ def long_only_backtester(
             ret = (current_trade["sell_price"] / current_trade["buy_price"]) - 1
             current_trade["return"] = ret
             current_trade["equity"] = equity * (1 + ret)
-            current_trade["fees"] = abs(net_equity * -2 * taker_fees)
-            current_trade["net_equity"] = net_equity * (1 + ret) - current_trade["fees"]
+            current_trade["net_equity"] = net_equity * (1 + ret - 2 * taker_fees)
+            current_trade["fees"] = (
+                current_trade["equity"] - current_trade["net_equity"]
+            )
+            # current_trade["fees"] = abs(net_equity * -2 * taker_fees)
+            # current_trade["net_equity"] = net_equity * (1 + ret) - current_trade["fees"]
 
             trades_df = pd.concat(
                 [trades_df, pd.DataFrame([current_trade])], ignore_index=True
@@ -133,7 +145,6 @@ def long_only_backtester(
             current_trade = {}
         else:
             timeframe_count += 1
-
         previous_row = row
 
     assert len(trades_df) > 0, "No trades were generated"
@@ -233,9 +244,19 @@ def plot_from_trade_df(trade_df: pd.DataFrame, price_df: pd.DataFrame) -> None:
 
     fig.add_trace(
         go.Scatter(
-            name="Equity progression",
+            name="Net equity progression",
             x=trades.index,
             y=trades["net_equity"],
+            line={"shape": "hv"},
+        ),
+        row=2,
+        col=1,
+    )
+    fig.add_trace(
+        go.Scatter(
+            name="Equity progression",
+            x=trades.index,
+            y=trades["equity"],
             line={"shape": "hv"},
         ),
         row=2,
