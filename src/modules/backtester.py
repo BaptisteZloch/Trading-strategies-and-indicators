@@ -37,7 +37,7 @@ def long_only_backtester(
     ohlcv_df = df.copy()
     previous_row = ohlcv_df.iloc[0]
     position_opened = False
-    trading_days = 0
+    timeframe_count = 0
     equity = initial_equity
     net_equity = initial_equity
     current_trade: dict[str, float | datetime | int | str | pd.Timestamp] = {}
@@ -63,11 +63,11 @@ def long_only_backtester(
             current_trade["buy_date"] = pd.Timestamp(index)
             current_trade["buy_price"] = row.Close
             current_trade["buy_reason"] = "Entry position triggered"
-            trading_days = 1
+            timeframe_count = 1
             buy_price = row.Close
         elif (
             position_opened is True
-            and long_exit_function(row, previous_row, trading_days) is True
+            and long_exit_function(row, previous_row, timeframe_count) is True
         ):
             position_opened = False
             current_trade["sell_date"] = pd.Timestamp(index)
@@ -83,7 +83,7 @@ def long_only_backtester(
             trades_df = pd.concat(
                 [trades_df, pd.DataFrame([current_trade])], ignore_index=True
             )
-            trading_days = 0
+            timeframe_count = 0
             equity = current_trade["equity"]
             net_equity = current_trade["net_equity"]
             current_trade = {}
@@ -105,7 +105,7 @@ def long_only_backtester(
             trades_df = pd.concat(
                 [trades_df, pd.DataFrame([current_trade])], ignore_index=True
             )
-            trading_days = 0
+            timeframe_count = 0
             equity = current_trade["equity"]
             net_equity = current_trade["net_equity"]
             current_trade = {}
@@ -127,12 +127,12 @@ def long_only_backtester(
             trades_df = pd.concat(
                 [trades_df, pd.DataFrame([current_trade])], ignore_index=True
             )
-            trading_days = 0
+            timeframe_count = 0
             equity = current_trade["equity"]
             net_equity = current_trade["net_equity"]
             current_trade = {}
         else:
-            trading_days += 1
+            timeframe_count += 1
 
         previous_row = row
 
