@@ -1,18 +1,6 @@
 import pandas as pd
 import numpy as np
-
-
-def momentum_indicator(close: pd.Series, lag: int = 14) -> pd.Series:
-    """Calculate the momentum indicator, also called ROC (Rate Of Change).
-
-    Args:
-        close (pd.Series): The series to compute the momentum on.
-        lag (int, optional): The lag for the momentum. Defaults to 14.
-
-    Returns:
-        pd.Series: The momentum indicator computed.
-    """
-    return 100 * (close.pct_change(periods=lag))
+from ta.momentum import ppo_hist
 
 
 def fischer_transformation(close: pd.Series, window: int = 5) -> pd.Series:
@@ -31,9 +19,8 @@ def fischer_transformation(close: pd.Series, window: int = 5) -> pd.Series:
     close_new: pd.Series = (2 * close_normalized) - 1
     smooth: pd.Series = close_new.ewm(span=5, adjust=True).mean()
 
-    return pd.Series(
-        (np.log((1 + smooth) / (1 - smooth))).ewm(span=3, adjust=True).mean(),
-        name=f"Fischer{window}",
+    return (
+        pd.Series((np.log((1 + smooth) / (1 - smooth)))).ewm(span=3, adjust=True).mean()
     )
 
 
@@ -62,7 +49,7 @@ def mean_break_out_indicator(close: pd.Series, window: int = 20) -> pd.Series:
     Returns:
         pd.Series: The MBO indicator.
     """
-    return (close - close.emw(window).mean()) / (
+    return (close - close.ewm(window).mean()) / (
         close.rolling(window).max() - close.rolling(window).min()
     )
 
@@ -85,6 +72,18 @@ def trend_intensity_indicator(close: pd.Series, window: int = 20) -> pd.Series:
         .sum()
         / window
     )
+
+
+def ppo_slope_indicator(close: pd.Series, slope_window: int = 4) -> pd.Series:
+    ppo_histo = ppo_hist(close=close)
+
+    def calculate_slope(ppo_values: pd.Series) -> float:
+        x = np.arange(1, len(ppo_values) + 1, 1)
+        y = np.array(ppo_values)
+        m, c = np.polyfit(x, y, 1)
+        return m
+
+    return ppo_histo.rolling(slope_window).apply(calculate_slope)
 
 
 #  @classmethod
