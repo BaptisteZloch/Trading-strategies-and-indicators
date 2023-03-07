@@ -35,3 +35,18 @@ def fischer_transformation(close: pd.Series, window: int = 5) -> pd.Series:
         (np.log((1 + smooth) / (1 - smooth))).ewm(span=3, adjust=True).mean(),
         name=f"Fischer{window}",
     )
+
+
+def z_score_indicator(close: pd.Series, window: int = 14) -> pd.Series:
+    """Compute the z-score of a time series over a window.
+
+    Args:
+        close (pd.Series): The time series to compute the z-score on.
+        window (int, optional): The window length of the data used to compute the z-score. . Defaults to 14.
+
+    Returns:
+        pd.Series: The z-score of the time series.
+    """
+    return (close - close.rolling(window=window).mean()) / close.rolling(
+        window=window
+    ).std()
