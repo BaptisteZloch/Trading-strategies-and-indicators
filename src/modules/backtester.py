@@ -149,6 +149,11 @@ def long_only_backtester(
     strategy_final_return = 100 * trades_df["equity"].iloc[-1] / initial_equity
     strategy_final_return_net = 100 * trades_df["net_equity"].iloc[-1] / initial_equity
     buy_and_hold_return = 100 * ohlcv_df["Close"].iloc[-1] / ohlcv_df["Close"].iloc[0]
+    volatility = trades_df["return"].std()
+    sharpe_ratio = trades_df["return"].mean() / volatility
+    sharpe_ratio_rfr = (
+        trades_df["return"].mean() - ohlcv_df.Close.pct_change().dropna().mean()
+    ) / volatility
 
     print(f"{'  General informations  ':-^50}")
     print(f"Period: [{str(ohlcv_df.index[0])}] -> [{str(ohlcv_df.index[-1])}]")
@@ -162,7 +167,9 @@ def long_only_backtester(
     print(f"Buy and Hold return: {buy_and_hold_return:.2f} %")
     print(f"Strategy winrate: {winrate:.2f} %")
     print(f"Strategy fees: {trades_df['fees'].sum():.2f} $")
-    print(f"Strategy volatility: {trades_df['return'].std():.2f} %")
+    print(f"Strategy volatility: {volatility:.2f} %")
+    print(f"Sharpe ratio: {sharpe_ratio:.2f} (no risk free rate)")
+    print(f"Sharpe ratio: {sharpe_ratio_rfr:.2f} (risk free rate = buy and hold)")
 
     print(f"\n{'  Trades informations  ':-^50}")
     print(
