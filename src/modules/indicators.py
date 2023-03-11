@@ -3,6 +3,78 @@ import numpy as np
 from ta.momentum import ppo_hist
 
 
+def fibonacci_moving_average(
+    close: pd.Series, fibonacci_n_terms: int = 17
+) -> pd.Series:
+    terms = tuple(
+        [
+            2,
+            3,
+            5,
+            8,
+            13,
+            21,
+            34,
+            55,
+            89,
+            144,
+            233,
+            377,
+            610,
+            987,
+            1597,
+            2584,
+            4181,
+            6765,
+            10946,
+        ]
+    )
+    if fibonacci_n_terms > len(terms):
+        raise ValueError(
+            "Error, provide less fibonacci terms, it must be lower that 17."
+        )
+
+    temp_df = pd.DataFrame({"Close": close.values})
+    for i in range(fibonacci_n_terms):
+        temp_df[f"EMA{terms[i]}"] = temp_df["Close"].ewm(terms[i]).mean()
+    temp_df.drop(columns=["Close"], inplace=True)
+    return temp_df.apply(lambda row: row.mean(), axis=1).values
+
+
+def fibonacci_distance_indicator(
+    close: pd.Series,
+    fibonacci_ma: pd.Series,
+    normalization: bool = True,
+    normalization_window: int = 20,
+    ma_smoothing: bool = True,
+    ma_smoothing_window: int = 10,
+) -> pd.Series:
+    """_summary_
+
+    Args:
+        close (pd.Series): The market, i.e. often the closing price.
+        fibonacci_ma (pd.Series): The pre-computed fibonacci moving average.
+        normalization (bool, optional): Whether to normalize the distance indicator with min-max scaling. Defaults to True.
+        normalization_window (int, optional): The min-max scaling window. Defaults to 20.
+        ma_smoothing (bool, optional):  Whether to smooth or not the distance indicator. True includes the normalization step. Defaults to True.
+        ma_smoothing_window (int, optional): The smoothing window. Defaults to 10.
+
+    Returns:
+        pd.Series: The fibonacci distance indicator.
+    """
+    dist = close - fibonacci_ma
+    if normalization is True or ma_smoothing is True:
+        dist_normalized = (dist - dist.rolling(normalization_window).min()) / (
+            dist.rolling(normalization_window).max()
+            - dist.rolling(normalization_window).min()
+        )
+        if ma_smoothing is True:
+            return dist_normalized.rolling(ma_smoothing_window).mean()
+        else:
+            return dist_normalized
+    return dist
+
+
 def fischer_transformation(close: pd.Series, window: int = 5) -> pd.Series:
     """Compute the fischer transformation on a series.
 
