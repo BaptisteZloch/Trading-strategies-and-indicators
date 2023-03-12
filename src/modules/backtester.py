@@ -17,6 +17,7 @@ def long_only_backtester(
     maker_fees: float = 0.001,
     taker_fees: float = 0.001,
     get_trade_df: bool = False,
+    parameter_optimization: bool = False,
 ) -> None | float | pd.DataFrame:
     """Run a backtest with long only position.
 
@@ -30,6 +31,7 @@ def long_only_backtester(
         maker_fees (float, optional): _description_. Defaults to 0.001.
         taker_fees (float, optional): _description_. Defaults to 0.001.
         get_trade_df (bool, optional): _description_. Defaults to False.
+        parameter_optimization (bool, optional): _description_. Defaults to False.
 
     Returns:
         None | float | pd.DataFrame: _description_
@@ -148,6 +150,9 @@ def long_only_backtester(
         previous_row = row
 
     assert len(trades_df) > 0, "No trades were generated"
+
+    if parameter_optimization is True:
+        return trades_df["net_equity"].iloc[-1]
 
     trades_df["trade_duration"] = trades_df["sell_date"] - trades_df["buy_date"]
 
