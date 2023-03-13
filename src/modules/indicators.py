@@ -3,6 +3,24 @@ import numpy as np
 from ta.momentum import ppo_hist
 
 
+def zlema(
+    close: pd.Series,
+    window: int = 26,
+) -> pd.Series:
+    """ZLEMA is an abbreviation of Zero Lag Exponential Moving Average. It was developed by John Ehlers and Rick Way.
+    ZLEMA is a kind of Exponential moving average but its main idea is to eliminate the lag arising from the very nature of the moving averages
+    and other trend following indicators. As it follows price closer, it also provides better price averaging and responds better to price swings.
+
+    Args:
+        close (pd.Series): _description_
+        window (int, optional): _description_. Defaults to 26.
+
+    Returns:
+        pd.Series: The ZLEMA indicator
+    """
+    return (close + (close.diff((window - 1) // 2))).ewm(span=window).mean()
+
+
 def fibonacci_moving_average(
     close: pd.Series, fibonacci_n_terms: int = 17
 ) -> pd.Series:
